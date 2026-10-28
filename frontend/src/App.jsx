@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Toast from './components/Toast';
+import ThreeDBackground from './components/ThreeDBackground';
 import ProductModal from './components/ProductModal';
 import AdjustStockModal from './components/AdjustStockModal';
 import ConfirmModal from './components/ConfirmModal';
@@ -124,66 +125,71 @@ export default function App() {
     }
   };
 
-  if (!token || !user) {
-    return (
-      <>
-        <AuthPage onAuthSuccess={handleAuthSuccess} addToast={addToast} />
-        <Toast toasts={toasts} onDismiss={removeToast} />
-      </>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col text-slate-900">
-      <Navbar
-        currentView={currentView}
-        setCurrentView={setCurrentView}
-        user={user}
-        onLogout={handleLogout}
-      />
+    <div className="min-h-screen relative bg-[#070a13] text-slate-100 flex flex-col font-sans selection:bg-sky-500 selection:text-white">
+      {/* 3D Interactive Ambient Canvas Background */}
+      <ThreeDBackground />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {currentView === 'dashboard' && (
-          <DashboardPage
-            key={refreshKey}
-            setCurrentView={setCurrentView}
-            onOpenAddProduct={() => setIsAddModalOpen(true)}
-            onOpenAdjustStock={(prod) => setAdjustingProduct(prod)}
-            addToast={addToast}
-          />
+      {/* Main App Content Layer */}
+      <div className="relative z-10 flex-1 flex flex-col">
+        {!token || !user ? (
+          <AuthPage onAuthSuccess={handleAuthSuccess} addToast={addToast} />
+        ) : (
+          <>
+            <Navbar
+              currentView={currentView}
+              setCurrentView={setCurrentView}
+              user={user}
+              onLogout={handleLogout}
+            />
+
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              {currentView === 'dashboard' && (
+                <DashboardPage
+                  key={refreshKey}
+                  setCurrentView={setCurrentView}
+                  onOpenAddProduct={() => setIsAddModalOpen(true)}
+                  onOpenAdjustStock={(prod) => setAdjustingProduct(prod)}
+                  addToast={addToast}
+                />
+              )}
+
+              {currentView === 'products' && (
+                <ProductsPage
+                  key={refreshKey}
+                  onOpenAddProduct={() => setIsAddModalOpen(true)}
+                  onOpenEditProduct={(prod) => setEditingProduct(prod)}
+                  onOpenAdjustStock={(prod) => setAdjustingProduct(prod)}
+                  onOpenDeleteProduct={(prod) => setDeletingProduct(prod)}
+                  addToast={addToast}
+                />
+              )}
+
+              {currentView === 'settings' && (
+                <SettingsPage
+                  key={refreshKey}
+                  addToast={addToast}
+                  onOrgUpdated={(newName) => {
+                    const updated = { ...user, organization_name: newName };
+                    setUser(updated);
+                    localStorage.setItem('stockflow_user', JSON.stringify(updated));
+                  }}
+                />
+              )}
+            </main>
+
+            {/* Footer */}
+            <footer className="border-t border-white/10 bg-slate-950/80 backdrop-blur-md py-6 text-center text-xs text-slate-400">
+              <p className="font-semibold text-slate-300">
+                StockFlow MVP 3D &copy; 2026. Built for Wexa AI Fullstack Assessment.
+              </p>
+              <p className="mt-1 text-slate-500">
+                FastAPI + SQLite/PostgreSQL • React + Tailwind CSS • 3D Parallax Environment
+              </p>
+            </footer>
+          </>
         )}
-
-        {currentView === 'products' && (
-          <ProductsPage
-            key={refreshKey}
-            onOpenAddProduct={() => setIsAddModalOpen(true)}
-            onOpenEditProduct={(prod) => setEditingProduct(prod)}
-            onOpenAdjustStock={(prod) => setAdjustingProduct(prod)}
-            onOpenDeleteProduct={(prod) => setDeletingProduct(prod)}
-            addToast={addToast}
-          />
-        )}
-
-        {currentView === 'settings' && (
-          <SettingsPage
-            key={refreshKey}
-            addToast={addToast}
-            onOrgUpdated={(newName) => {
-              const updated = { ...user, organization_name: newName };
-              setUser(updated);
-              localStorage.setItem('stockflow_user', JSON.stringify(updated));
-            }}
-          />
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
-        <p>StockFlow MVP &copy; 2026. Built for Wexa AI Fullstack Assessment.</p>
-        <p className="mt-1 text-slate-400">
-          FastAPI + SQLite/PostgreSQL • React + Tailwind CSS • Multi-Tenant Isolated
-        </p>
-      </footer>
+      </div>
 
       {/* Modals */}
       {(isAddModalOpen || editingProduct) && (
