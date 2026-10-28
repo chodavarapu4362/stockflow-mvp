@@ -1,6 +1,6 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -77,21 +77,21 @@ if static_dir:
     if os.path.isdir(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
-    @app.get("/")
+    @app.api_route("/", methods=["GET", "HEAD"])
     async def serve_index():
         return FileResponse(os.path.join(static_dir, "index.html"))
 
-    @app.get("/{full_path:path}")
+    @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
     async def serve_spa(full_path: str):
         # Don't intercept API routes or documentation
         if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
-            return None
+            raise HTTPException(status_code=404, detail="Not Found")
         file_path = os.path.join(static_dir, full_path)
-        if os.path.isfile(file_path):
+        if full_path and os.path.isfile(file_path):
             return FileResponse(file_path)
         return FileResponse(os.path.join(static_dir, "index.html"))
 else:
-    @app.get("/")
+    @app.api_route("/", methods=["GET", "HEAD"])
     async def serve_fallback():
         return {
             "status": "online",

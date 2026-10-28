@@ -34,4 +34,4 @@ WORKDIR /app/backend
 
 EXPOSE 8000 10000
 
-CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
