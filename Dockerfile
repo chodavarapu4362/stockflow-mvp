@@ -26,8 +26,9 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 # Copy backend code
 COPY backend/ ./backend/
 
-# Copy built frontend static assets into the expected location
-COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+# Copy built frontend static assets into multiple standard lookup locations
+COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
+COPY --from=frontend-builder /app/frontend/dist /app/backend/frontend/dist
 
 WORKDIR /app/backend
 

@@ -55,28 +55,47 @@ def health_check():
     }
 
 # Mount static frontend build if it exists (for full-stack deployment on Render/Railway)
-# Look in ../frontend/dist or ./frontend/dist
 frontend_dist_paths = [
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")),
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")),
-    os.path.abspath("frontend/dist")
+    os.path.abspath("frontend/dist"),
+    os.path.abspath("../frontend/dist"),
+    "/app/frontend/dist",
+    "/app/backend/frontend/dist"
 ]
 
 static_dir = None
 for p in frontend_dist_paths:
-    if os.path.isdir(p):
+    if os.path.isdir(p) and os.path.isfile(os.path.join(p, "index.html")):
         static_dir = p
         break
 
+print(f"[*] Serving Frontend Static Files from: {static_dir}")
+
 if static_dir:
-    app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="assets")
+    assets_dir = os.path.join(static_dir, "assets")
+    if os.path.isdir(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    @app.get("/")
+    async def serve_index():
+        return FileResponse(os.path.join(static_dir, "index.html"))
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
-        # Don't intercept API routes
+        # Don't intercept API routes or documentation
         if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
             return None
         file_path = os.path.join(static_dir, full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
         return FileResponse(os.path.join(static_dir, "index.html"))
+else:
+    @app.get("/")
+    async def serve_fallback():
+        return {
+            "status": "online",
+            "message": "StockFlow API is running. Frontend build not detected at root.",
+            "api_docs": "/docs",
+            "health": "/api/health"
+        }
